@@ -1,23 +1,35 @@
 # 🌐 Multilingual Translation Engine
 
-A real-time translation engine powered by Oracle Cloud Infrastructure (OCI) AI Language Services, optimized for global business communication and technical documentation translation.
+**A demonstration application showcasing Oracle Cloud Infrastructure (OCI) AI Language Services capabilities.**
 
-## 🚀 Features
+> ⚠️ **Note**: This is a demonstration project built to explore and showcase OCI AI Language translation capabilities. It is not intended for production business use or commercial purposes.
+
+## 🎯 Project Purpose
+
+This project serves as a technical demonstration of:
+- **Oracle Cloud Infrastructure AI Language Services** integration
+- **Real-time translation capabilities** using cloud AI
+- **Modern web application development** with Python and Streamlit
+- **Cloud deployment practices** and secure credential management
+
+## 🚀 Demo Features
 
 - **Real-time Translation**: Instant translation between 20+ languages
 - **Auto Language Detection**: Automatically detect source language
-- **Batch Translation**: Upload and translate entire text files
-- **Translation History**: Keep track of your translations
-- **Business-Focused**: Optimized for professional communication
-- **Japanese-English Specialization**: Perfect for Japan market entry
-- **Multiple Interfaces**: Both Streamlit and Flask web applications
-- **Cloud-Native**: Built for Oracle Cloud Infrastructure
+- **Sample Text Library**: Pre-loaded examples for testing different translation scenarios
+- **Interactive Interface**: Clean, user-friendly web application
+- **Multiple Language Pairs**: Supports major world languages including Japanese, English, Spanish, French, and more
+- **Cloud-Native Architecture**: Built for Oracle Cloud Infrastructure
 
-## 🎯 Target Use Cases
+## 🧪 Demonstration Scenarios
 
-### For Japan Market Entry
-- **Business Communication**: Translate emails, proposals, and contracts
-- **Technical Documentation**: API docs, user manuals, and specifications
+This demo application includes sample texts for various scenarios:
+- **Business Communication**: Email templates and professional correspondence
+- **Technical Documentation**: API documentation and technical specifications
+- **Casual Conversation**: Everyday communication examples
+- **Legal Text**: Formal document examples
+
+*These samples are for demonstration purposes only and should not be used for actual business transactions.*
 - **Marketing Content**: Website content, product descriptions
 - **Legal Documents**: Terms of service, privacy policies, agreements
 
