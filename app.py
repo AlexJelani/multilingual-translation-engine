@@ -3,6 +3,84 @@ import oci
 import os
 from typing import Dict, List
 import json
+from datetime import datetime
+
+# Usage Limiter Class
+class UsageLimiter:
+    def __init__(self, daily_limit=50, monthly_limit=500):
+        self.daily_limit = daily_limit
+        self.monthly_limit = monthly_limit
+    
+    def get_usage_data(self):
+        """Get current usage data from session state"""
+        if 'usage_data' not in st.session_state:
+            st.session_state.usage_data = {
+                'daily_count': 0,
+                'monthly_count': 0,
+                'last_reset_day': datetime.now().strftime('%Y-%m-%d'),
+                'last_reset_month': datetime.now().strftime('%Y-%m')
+            }
+        return st.session_state.usage_data
+    
+    def reset_counters_if_needed(self, usage_data):
+        """Reset counters if day/month has changed"""
+        today = datetime.now().strftime('%Y-%m-%d')
+        this_month = datetime.now().strftime('%Y-%m')
+        
+        if usage_data['last_reset_day'] != today:
+            usage_data['daily_count'] = 0
+            usage_data['last_reset_day'] = today
+        
+        if usage_data['last_reset_month'] != this_month:
+            usage_data['monthly_count'] = 0
+            usage_data['last_reset_month'] = this_month
+    
+    def can_translate(self):
+        """Check if translation is allowed"""
+        usage_data = self.get_usage_data()
+        self.reset_counters_if_needed(usage_data)
+        
+        if usage_data['daily_count'] >= self.daily_limit:
+            return False, f"Daily limit reached ({self.daily_limit} translations/day)"
+        
+        if usage_data['monthly_count'] >= self.monthly_limit:
+            return False, f"Monthly limit reached ({self.monthly_limit} translations/month)"
+        
+        return True, "OK"
+    
+    def increment_usage(self):
+        """Increment usage counters"""
+        usage_data = self.get_usage_data()
+        usage_data['daily_count'] += 1
+        usage_data['monthly_count'] += 1
+        st.session_state.usage_data = usage_data
+    
+    def show_usage_stats(self):
+        """Display current usage statistics"""
+        usage_data = self.get_usage_data()
+        self.reset_counters_if_needed(usage_data)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            daily_remaining = max(0, self.daily_limit - usage_data['daily_count'])
+            st.metric("Daily Remaining", f"{daily_remaining}/{self.daily_limit}")
+        with col2:
+            monthly_remaining = max(0, self.monthly_limit - usage_data['monthly_count'])
+            st.metric("Monthly Remaining", f"{monthly_remaining}/{self.monthly_limit}")
+
+def show_demo_disclaimer():
+    """Display demo usage disclaimer"""
+    st.warning("""
+    ⚠️ **Demo Usage Notice**
+    
+    This is a demonstration application with usage limits to manage costs:
+    - **Purpose**: Technical showcase of OCI AI Language Services
+    - **Daily Limit**: 50 translations per day
+    - **Monthly Limit**: 500 translations per month
+    - **Not for production**: Please use responsibly for demo purposes only
+    
+    For production translation needs, consider implementing your own instance.
+    """)
 
 # Page configuration
 st.set_page_config(
@@ -255,6 +333,9 @@ def get_supported_languages() -> Dict[str, str]:
 def main():
     """Main Streamlit application"""
     
+    # Initialize usage limiter
+    usage_limiter = UsageLimiter(daily_limit=50, monthly_limit=500)
+    
     # Initialize session state first (before any widgets)
     if 'source_lang' not in st.session_state:
         st.session_state.source_lang = "auto"
@@ -276,6 +357,9 @@ def main():
     st.markdown('<h1 class="main-header">🌐 Multilingual Translation Engine</h1>', unsafe_allow_html=True)
     st.markdown('<p style="text-align: center; color: #666; font-size: 1.1em;">Powered by Oracle Cloud Infrastructure AI Language Services</p>', unsafe_allow_html=True)
     
+    # Show demo disclaimer
+    show_demo_disclaimer()
+    
     # Initialize translator
     translator = OCITranslator()
     
@@ -290,6 +374,10 @@ def main():
     # Sidebar configuration
     with st.sidebar:
         st.header("⚙️ Configuration")
+        
+        # Usage statistics
+        st.subheader("📊 Demo Usage")
+        usage_limiter.show_usage_stats()
         
         # Language selection
         languages = get_supported_languages()
@@ -381,18 +469,29 @@ def main():
         # Show translation when there's text (maintains real-time functionality)
         # The button provides a clear call-to-action but doesn't change the behavior
         if input_text.strip():
-            with st.spinner("🔄 Translating..."):
-                # Detect source language if auto-detect is selected
-                if source_lang == "auto":
-                    detected_lang = translator.detect_language(input_text)
-                    if detected_lang != "unknown":
-                        st.info(f"🔍 Detected language: {languages.get(detected_lang, detected_lang)}")
-                
-                # Perform translation
-                translation = translator.translate_text(input_text, target_lang, source_lang)
-                
-                # Display translation
-                st.markdown(f'<div class="translation-box">{translation}</div>', unsafe_allow_html=True)
+            # Check usage limits before translation
+            can_translate, limit_message = usage_limiter.can_translate()
+            
+            if not can_translate:
+                st.error(f"🚫 {limit_message}")
+                st.info("💡 Usage limits help keep this demo free and available for everyone. Limits reset daily/monthly.")
+            else:
+                with st.spinner("🔄 Translating..."):
+                    # Detect source language if auto-detect is selected
+                    if source_lang == "auto":
+                        detected_lang = translator.detect_language(input_text)
+                        if detected_lang != "unknown":
+                            st.info(f"🔍 Detected language: {languages.get(detected_lang, detected_lang)}")
+                    
+                    # Perform translation
+                    translation = translator.translate_text(input_text, target_lang, source_lang)
+                    
+                    # Increment usage counter after successful translation
+                    if not translation.startswith("❌"):
+                        usage_limiter.increment_usage()
+                    
+                    # Display translation
+                    st.markdown(f'<div class="translation-box">{translation}</div>', unsafe_allow_html=True)
                 
                 # Copy button
                 if st.button("📋 Copy Translation"):
